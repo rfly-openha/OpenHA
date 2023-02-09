@@ -1,0 +1,8 @@
+# .gitignore文件
+
+# 测试文件
+run.ipynb
+run.py
+
+# pyc文件
+**/__pycache__/
