@@ -11,22 +11,22 @@ def interpolation(
     x: np.ndarray, y: np.ndarray, x_est: np.ndarray, method: str = 'linear'
 ) -> np.ndarray:
     '''
-    插值
+    Interpolation
 
-    根据输入`x`、`y`和指定的插值算法，估计原数据在`x_est`处的值。
-    可用的插值算法包括'linear', 'nearest', 'nearest-up', 'zero',
+    The value of the original data at `x_est` is estimated from the input `x`, `y` and the specified interpolation algorithm.
+    The available interpolation algorithms include 'linear', 'nearest', 'nearest-up', 'zero',
         'slinear', 'quadratic', 'cubic', 'previous', or 'next'. 'zero',
-        'slinear', 'quadratic' and 'cubic' 样条插值; 'previous' and 'next'
-        简单地以前序或后续样本作为当前数据点;
+        'slinear', 'quadratic' and 'cubic'; 'previous' and 'next'
+        Simply use the preamble or subsequent samples as the current data point;
 
     Args:
-        x: np.ndarray, 一维实数序列
-        y: np.ndarray, 与`x`相关的序列，长度与`x`保持一致
-        x_est: np.ndarray, 待求的样本点
-        method: str, 插值方法
+        x: np.ndarray, One-dimensional sequences of real numbers
+        y: np.ndarray, Sequence associated with `x`, the length the same as `x`
+        x_est: np.ndarray, Sample points to be found
+        method: str, Interpolation method
 
     Returns:
-        长度与`x_est`一致的序列
+        Sequence of length consistent with `x_est`
 
     '''
     f = scipy.linalg.interpolation.interp1d(x, y, kind=method)

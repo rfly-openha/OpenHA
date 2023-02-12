@@ -6,21 +6,21 @@ import numpy as np
 
 
 def local_outlier_factor(points: np.ndarray, k: int) -> list:
-    # LOF 局部离群点因子算法 Local Outlier Factor
+    # LOF, Local Outlier Factor
     #   MATLAB对LOF算法的实现用于检测离群点
     #
     #   lof = LOF(points, k)
     #
     #   argument
-    #       points - 样本点，维度为MxN，表示N个样本点，每个样本点有M个坐标分量
-    #       k - 近邻点数量，算法参数之一，应根据样本点数量合适选取
+    #       points - Sample points with dimension MxN, representing N sample points, each with M coordinate components
+    #       k - Number of nearest neighbours, one of the parameters of the algorithm, which should be selected appropriately according to the number of sample points
     #   return
-    #       lof - 各样本点的局部离群因子
+    #       lof - Local outlier for each sample point
     #
 
-    # 样本点数量
+    # Number of sample points
     n = len(points)
-    # 两两之间距离计算
+    # Calculation of the distance
     d = np.zeros((n, n))
 
     for i in range(n):
@@ -28,24 +28,24 @@ def local_outlier_factor(points: np.ndarray, k: int) -> list:
             d[i][j] = np.linalg.norm(points[i] - points[j])
             d[j][i] = d[i][j]
 
-    # 保存每个点的k领域内的点的下标
+    # Save the subscripts of the points in the k-field of each point
     N_p = []
-    # 第k距离
+    # k-th distance
     k_distance = [0] * n
 
     for i in range(n):
-        # 排序找到距离最近的第k个点的距离
+        # Sort to find the distance to the kth nearest point
         neighbor_i = [(d[i][j], j) for j in range(n)]
-        # 按距离进行排序
+        # Sort by distance
         neighbor_i = sorted(neighbor_i, key=lambda x: x[0])
         k_distance[i] = neighbor_i[k][0]
-        # 以此距离找到所有距离内的点
+        # Find all points within this distance
         for j in range(n - 1, -1, -1):
             if neighbor_i[j][0] <= k_distance[i]:
                 break
         N_p.append([x[1] for x in neighbor_i[1 : j + 1]])
 
-    # 局部可达距离
+    # Local reachable distance
     lrd = np.zeros((n,))
 
     for i in range(n):
@@ -53,7 +53,7 @@ def local_outlier_factor(points: np.ndarray, k: int) -> list:
             lrd[i] += max(k_distance[j], d[i][j])
         lrd[i] = len(N_p[i]) / lrd[i]
 
-    # 局部离群因子
+    # Local outlier
     lof = np.zeros((n,))
 
     for i in range(n):
