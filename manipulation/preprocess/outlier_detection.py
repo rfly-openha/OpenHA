@@ -6,17 +6,18 @@ import numpy as np
 
 
 def local_outlier_factor(points: np.ndarray, k: int) -> list:
-    # LOF, Local Outlier Factor
-    #   MATLAB对LOF算法的实现用于检测离群点
-    #
-    #   lof = LOF(points, k)
-    #
-    #   argument
-    #       points - Sample points with dimension MxN, representing N sample points, each with M coordinate components
-    #       k - Number of nearest neighbours, one of the parameters of the algorithm, which should be selected appropriately according to the number of sample points
-    #   return
-    #       lof - Local outlier for each sample point
-    #
+    '''
+    The local outlier factor algorithm
+
+    Detect outliers by the local outlier factor.
+
+    Args:
+        points: np.ndarray, samples points of m-by-n, representing `m` samples.
+        k: int, number of nearest neighbours, one of the parameters of the algorithm, which should be selected appropriately according to the number of sample points.
+
+    Returns:
+        lof, a list of local outlier factors of each sample points.
+    '''
 
     # Number of sample points
     n = len(points)

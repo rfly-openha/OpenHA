@@ -12,15 +12,15 @@ def analytical_hierarchy_process(
     Analytical Hierarchy Process (AHP)
 
     Compute weights of each element according to AHP and the comparison matrix `A`
-    And the parameter `method` is used to decide the way to finally to compute weights vector.
+    The argument `method` is used to decide the way to finally get weights vector.
 
     Args:
-        A: np.ndarray, comparison matrix who is need to be square.
-        method: str, optional, the way to finally to compute weights vector
-            `eigenvector` (default), `geometric_mean`, and `arithmetic_mean`。
-            `eigenvector`: the eigenvector corresponding to the max eigenvalue。
-            `geometric_mean`: the geometric mean of each row of matrix `A`。
-            `arithmetic_mean`: the arithmetic mean of each row of matrix `A`。
+        A: np.ndarray, comparison matrix which is a square matrix.
+        method: str, optional, the way to finally compute weights vector.
+            `eigenvector` (default), `geometric_mean`, and `arithmetic_mean`.
+            `eigenvector`: the eigenvector corresponding to the max eigenvalue.
+            `geometric_mean`: the geometric mean of each row of matrix `A`.
+            `arithmetic_mean`: the arithmetic mean of each row of matrix `A`.
 
     Returns:
         tuple: a list of weights and coherence ratio
@@ -57,7 +57,7 @@ def analytical_hierarchy_process(
     # normlization
     W /= W.sum()
     # return
-    return (W, CR)
+    return (W, CI.real, CR.real)
 
 
 def sum_by_weight(weights: list[float], elements: list[float]) -> float:

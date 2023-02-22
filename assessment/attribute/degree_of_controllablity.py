@@ -18,26 +18,26 @@ def control_allocation(
     Generate the control allocation matrix
 
     Args:
-        n: int, number of propellers
+        n: int, number of propellers.
         d: Union[list, float], distance from each propeller to the origin the body coordinate.
-        ku: Union[list, float], ratio of the moment factor to the force factor of each propeller.
-        **init_angle: Union[list, float], the angle from propeller #1 to the positive direction of the body x-axis by clockwise, default is 0, radian system, the rest of the propellers are evenly distributed；
-        **drct: Union[list, int], rotation direction of each propeller, 1 is counterclockwise, -1 is clockwise, propeller #1 is clockwise as default.
-        **eta: Union[list, float], Efficiency factor for each rotor, default is 1
-        **giveup_yaw: bool, give up controling the yaw, default is `False`.
-        **giveup_height: bool, give up controling height, default is `False`.
+        ku: Union[list, float], ratio of the torque coefficient to the thrust coefficient of each propeller.
+        **init_angle: Union[list, float], the angle from positive body x-axis to the supported arm of propeller #1 by clockwise, default is `0`. Radian system. All the propellers are evenly distributed if `init_angle` is a scaler.
+        **drct: Union[list, int], rotation direction of each propeller, `1` means counterclockwise, -1 means clockwise. Propeller #1 is counterclockwise as default.
+        **eta: Union[list, float], efficiency factor of each rotor, default is `1`.
+        **giveup_yaw: bool, whether give up controling yaw, default is `False`.
+        **giveup_height: bool, whether give up controling height, default is `False`.
 
     Returns:
-        control allocation matrix `B_f`
+        control allocation matrix `B_f`.
 
     '''
-    # dimension of the matrix is 4*n
+    # default dimension of the matrix is 4*n
     bf = np.zeros((4, n))
 
-    # extends is to an array if it's a scalar
+    # extend it to an array if it's a scalar
     if hasattr(d, '__iter__') == False:
         d = [d] * n
-    # extends is to an array if it's a scalar
+    # extend it to an array if it's a scalar
     if hasattr(ku, '__iter__') == False:
         ku = [ku] * n
 
@@ -48,8 +48,9 @@ def control_allocation(
     else:
         phi = [init_angle + 2 * math.pi * i / n for i in range(n)]
 
-    # `drct` is in the kwargs
-    drct = kwargs.get('drct', [1 if i % 2 else -1 for i in range(n)])
+    # if `drct` is in the kwargs
+    # default is [1, -1, 1, -1, ...]
+    drct = kwargs.get('drct', [-1 if i % 2 else 1 for i in range(n)])
 
     # efficiency factor of each propeller
     eta = kwargs.get('eta', 1)
@@ -66,10 +67,10 @@ def control_allocation(
         bf[3][i] = drct[i] * ku[i]
     # Multiply by the efficiency factor to get the final control allocation matrix
     B_f = np.matmul(bf, eta)
-    # tell whether to delete the first and last rows
+    # whether to delete the first and last rows
     buttom = 3 if kwargs.get('giveup_yaw', False) else 4
     head = 1 if kwargs.get('giveup_height', False) else 0
-    # return the required part of the matrix by slice operation
+    # return the required part of the matrix by slicing
     return B_f[head:buttom]
 
 
@@ -81,19 +82,22 @@ def acai(
 ) -> float:
     '''
 
-    Compute the Available Control Authority Index.
+    Compute the Available Control Authority Index (ACAI).
 
-    This function refers to Theorem 3.3 of Du Guangxun's phd dissertation in P.35, corresponding to Equation (3.17)(3.18)
+    This function refers to Theorem 3.3 of Du Guangxun's PhD dissertation (P.35), corresponding to Equation (3.17)(3.18)
     The mathematical essence of ACAI is the minimum of the nearest distance between the boundary of a closed space with boundaries `fmax` and `fmin` and the boundary of the new space obtained by mapping the matrix `bf` to its interior point `G`.
 
     Args:
-        bf: ndarray, n*m reflection matrix, control allocation matrix for multicopters
-        fmax: Union[ndarray, float], the upper boundary of enclosed space.
+        bf: ndarray, an m-by-n matrix, control allocation matrix for multicopters
+        fmax: Union[ndarray, float], the upper boundary of the enclosed space.
         fmin: Union[ndarray, float], the lower boundary of the enclosed space.
-        G: ndarray, A vector of length n, representing the coordinates of a point
+        G: ndarray, an n-length vector, representing an point in the space.
 
     Returns:
         Minimum of the nearest distance from point `G` to each boundary of the mapped space
+
+    References:
+        [1] G.-X. Du, Q. Quan, B. Yang, and K.-Y. Cai, "Controllability Analysis for Multirotor Helicopter Rotor Degradation and Failure," Journal of Guidance, Control, and Dynamics, vol. 38, no. 5, pp. 978-984, 2015. DOI: 10.2514/1.G000731.
     '''
     # number of control variables is n, and number of propeller is m
     [n, m] = bf.shape
@@ -152,19 +156,19 @@ def acai(
 
 def doc_gramian(A: np.ndarray, B: np.ndarray) -> tuple[float, float, float]:
     '''
-    Calculating Gramian matrix-based controllability
+    Calculating Gramian-matrix-based degree of controllability (DoC)
 
-    The function refers to equation (2.9) in the paper [1] for calculating the Gramian matrix-based controllability of a linear time-invariant system.
-    The method incorporates three controllability degrees, depending on the energy optimisation objective of the definition with respect to the input quantities.
+    The function refers to equation (2.9) in the paper [1], for calculating the Gramian-matrix-based DoC of a linear time-invariant (LTI) system.
+    The method incorporates three controllability degrees, depending on the energy optimisation objective.
 
     Args:
-        A: np.ndarray, state transfer matrix
+        A: np.ndarray, state matrix
         B: np.ndarray, input matrix
 
     Returns:
-        triple
+        A triple
 
-    [1] 杜光勋, 全权. 输入受限系统的可控度及其在飞行控制中的应用[J]. 系统科学与数学, 2014, 34(12): 1578-1594.
+    [1] G.-X. Du, Q. Quan, "Degree of Controllability and its Application in Aircraft Flight Control," Journal of Systems Science and Mathematical Sciences, vol. 34, no. 12, pp. 1578-1594, 2014.
 
     '''
     # Dimensionality of the state matrix
@@ -246,25 +250,25 @@ def doc_disturbance_rejection_kang(
     A: np.ndarray, B: np.ndarray, D: np.ndarray, Sw: np.ndarray
 ) -> float:
     '''
-    Calculation of the degree of controllability indicating immunity to interference
+    Calculation of the degree of controllability for disturbance rejection
 
-    This method is used to calculate the controllability of an LTI system, indicating the resistance to interference.
+    This method is used to calculate the controllability of an LTI system, for disturbance rejection.
     A metric for expressing the controllability of a system against interference is presented in [1].
-    Specifically, a method is given for calculating the controllability for a general system state space representation.
+    Specifically, a method is given for calculating this controllability for a general system state space representation.
     The two important matrices required for the calculation process are obtained by solving two first-order differential equations.
-    For linear time-invariant systems, it is shown that the differential equation is identical to the lyapunov equation.
+    For LTI systems, it is proven that the differential equation is equivalent to the lyapunov equation.
     Details of the proof and other details can be found in the original literature.
 
     Args:
-        A: np.ndarray, State matrix of a linear system state space
-        B: np.ndarray, Input matrix for linear system state space
-        D: np.ndarray, Perturbation vectors for the equation of state of a linear system
-        Sw: np.ndarray, Covariance matrix of perturbations
+        A: np.ndarray, state matrix of a linear system state space
+        B: np.ndarray, input matrix for linear system state space
+        D: np.ndarray, perturbation vectors for the equation of state of a linear system
+        Sw: np.ndarray, covariance matrix of perturbations
 
     Returns:
-        Indicates controllability of immunity to interference
+        Degree of controllability for disturbance rejection
 
-    [1] Kang O, Park Y, Park Y S, et al. New measure representing degree of controllability for disturbance rejection[J/OL]. Journal of Guidance, Control, and Dynamics, 2009, 32(5): 1658-1661. DOI: 10.2514/1.43864.
+    [1] O. Kang, Y. Park, Y. S. Park, M. Suh, "New measure representing degree of controllability for disturbance rejection," Journal of Guidance, Control, and Dynamics, vol. 32, no. 5, pp. 1658-1661, 2009. DOI: 10.2514/1.43864.
 
     '''
 

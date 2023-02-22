@@ -29,7 +29,7 @@ def interpolation(
         Sequence of length consistent with `x_est`
 
     '''
-    f = scipy.linalg.interpolation.interp1d(x, y, kind=method)
+    f = scipy.interpolate.interp1d(x, y, kind=method)
     return f(x_est)
 
 

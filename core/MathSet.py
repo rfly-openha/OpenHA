@@ -14,7 +14,7 @@ class MathSet:
 
     '''
 
-    def __init__(self, membership_func: function) -> None:
+    def __init__(self, membership_func) -> None:
         '''
         Constructed Function
 
@@ -26,7 +26,7 @@ class MathSet:
         '''
         self.membership_func = membership_func
 
-    def has(self, element) -> bool:
+    def has(self, element) -> bool | list[bool]:
         '''
         Tell the relationship between `element` and this set.
 
@@ -34,14 +34,13 @@ class MathSet:
             element: An element or iterator, acceptable to the  `membership_func()`.
 
         Returns:
-            bool or float, can be iterator if `element` is iterable.
+            bool or float, can be list if `element` is an array.
 
         '''
         # tell whether `element` is iterable
         if hasattr(element, '__iter__'):
             # compute the degree of membership of each
-            for i in element:
-                yield self.membership_func(i)
+            return [self.membership_func(i) for i in element]
         else:
             # compute the degree of membership
             return self.membership_func(element)
@@ -51,9 +50,9 @@ def get_interval(
     left: int, right: int, l_closed: bool = False, r_closed: bool = False
 ) -> MathSet:
     '''
-    Generate a interval
+    Generate an interval
 
-    Generates a interval based on the parameters.
+    Generates an interval based on the arguments.
     The opening and closing of the set depends on `l_closed` and `r_closed`.
 
     Args:

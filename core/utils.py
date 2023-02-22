@@ -10,7 +10,7 @@ def split_dataset(X: list, Y: list, percent: float = 0.15) -> tuple:
     Split dataset randomly.
 
     Split the dataset with samples `X` and labels `Y` randomly into X1, X2, Y1, Y2.
-    The ratio of the numbers of samples in X1 and that of X is decided by `percent`.
+    The ratio of the numbers of samples in X1 and that of X is determined by `percent`.
 
     Args:
         X: list, all the samples

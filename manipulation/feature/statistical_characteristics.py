@@ -15,11 +15,11 @@ def raw_moment(x: np.ndarray, k: int) -> Union[float, np.ndarray]:
     Return the raw moment of all the samples.
 
     Args:
-        x: np.ndarray, whose shape is (n, m), refer to `n` samples and the length of each is `m`.
+        x: np.ndarray, whose shape is `(n, m)`, refer to `n` samples and the length of each is `m`.
         k: int, number of the order.
 
     Returns:
-        Raw moment, a scalar if `x.shape==(n,)`, else an ndarray object whose shape is (m,).
+        Raw moment, a scalar if `x.shape == (n,)`, else an ndarray object whose shape is `(m,)`.
 
     '''
 
@@ -70,7 +70,7 @@ def average_rectified_value(x: np.ndarray) -> float:
     In electrical engineering, the average rectified value of a quantity is the average of its absolute value.
 
     Args:
-        x: np.ndarray, n samples of a quantity.
+        x: np.ndarray, `n` samples of a quantity.
 
     Returns:
         The average rectified value.
@@ -102,7 +102,7 @@ def kurtosis(x) -> float:
     Compute the kurtosis of time series.
 
     Args:
-        x: np.ndarray, n samples of times series.
+        x: np.ndarray, `n` samples of times series.
 
     Returns:
         Kurtosis
