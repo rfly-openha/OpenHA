@@ -4,7 +4,6 @@
 
 import math
 from itertools import combinations
-from typing import Union
 
 import numpy as np
 import scipy
@@ -12,26 +11,35 @@ import sympy as sp
 
 
 def control_allocation(
-    n: int, d: Union[list, float], ku: Union[list, float], **kwargs
+    n: int, d: list | float, ku: list | float, **kwargs
 ) -> np.ndarray:
     '''
-    Generate the control allocation matrix
+    Returns the control allocation matrix of a multicopter.
 
     Args:
-        n: int, number of propellers.
-        d: Union[list, float], distance from each propeller to the origin the body coordinate.
-        ku: Union[list, float], ratio of the torque coefficient to the thrust coefficient of each propeller.
-        **init_angle: Union[list, float], the angle from positive body x-axis to the supported arm of propeller #1 by clockwise, default is `0`. Radian system. All the propellers are evenly distributed if `init_angle` is a scaler.
-        **drct: Union[list, int], rotation direction of each propeller, `1` means counterclockwise, -1 means clockwise. Propeller #1 is counterclockwise as default.
-        **eta: Union[list, float], efficiency factor of each rotor, default is `1`.
-        **giveup_yaw: bool, whether give up controling yaw, default is `False`.
-        **giveup_height: bool, whether give up controling height, default is `False`.
 
-    Returns:
-        control allocation matrix `B_f`.
+        n: int. The number of propellers of a multicopter.
+
+        d: list | float. The distance between each propeller and the origin of the body coordinate.
+
+        ku: list | float. The ratio of the torque to thrust of each propeller.
+
+        **init_angle: list | float. The angle from $O_\text{b}x_\text{b}$ axis to each supporting arm of the propeller in clockwise direction in radians.
+        When all the propellers are distributed evenly, specify `init_angle` as a positive value.
+        It then indicates the angle of propeller #1, namely $\phi_1$ = `init_angle`.
+
+
+        **drct: list. The rotation direction of each propeller, specified as an array of length `n`, in which each element is `-1` or `1`. Default is `[1, -1, 1, -1, 1, -1]`.
+
+        **eta: list | float. The efficient coefficient of each propeller. Default is `1`.
+
+        **giveup_yaw: bool. Whether to give up the control of height or not. `True` or `False` (default).
+
+        **giveup_height: bool. Whether to give up the control of yaw or not. `True` or `False` (default).
+
 
     '''
-    # default dimension of the matrix is 4*n
+    # default shape of the matrix is (4, n)
     bf = np.zeros((4, n))
 
     # extend it to an array if it's a scalar
@@ -49,10 +57,10 @@ def control_allocation(
         phi = [init_angle + 2 * math.pi * i / n for i in range(n)]
 
     # if `drct` is in the kwargs
-    # default is [1, -1, 1, -1, ...]
+    # default is `[1, -1, 1, -1, ...]`
     drct = kwargs.get('drct', [-1 if i % 2 else 1 for i in range(n)])
 
-    # efficiency factor of each propeller
+    # efficiency coefficient of each propeller
     eta = kwargs.get('eta', 1)
     if hasattr(eta, '__iter__'):
         eta = np.diag(eta)
@@ -65,36 +73,40 @@ def control_allocation(
         bf[1][i] = -d[i] * math.sin(phi[i])
         bf[2][i] = d[i] * math.cos(phi[i])
         bf[3][i] = drct[i] * ku[i]
-    # Multiply by the efficiency factor to get the final control allocation matrix
+
+    # Multiply by the efficiency coefficient to get the control allocation matrix
     B_f = np.matmul(bf, eta)
+
     # whether to delete the first and last rows
     buttom = 3 if kwargs.get('giveup_yaw', False) else 4
     head = 1 if kwargs.get('giveup_height', False) else 0
+
     # return the required part of the matrix by slicing
     return B_f[head:buttom]
 
 
 def acai(
     bf: np.ndarray,
-    fmax: Union[np.ndarray, float],
-    fmin: Union[np.ndarray, float],
+    fmax: np.ndarray | float,
+    fmin: np.ndarray | float,
     G: np.ndarray,
 ) -> float:
     '''
 
-    Compute the Available Control Authority Index (ACAI).
+    Compute the DOC based on the Available Control Authority Index (ACAI).
 
-    This function refers to Theorem 3.3 of Du Guangxun's PhD dissertation (P.35), corresponding to Equation (3.17)(3.18)
-    The mathematical essence of ACAI is the minimum of the nearest distance between the boundary of a closed space with boundaries `fmax` and `fmin` and the boundary of the new space obtained by mapping the matrix `bf` to its interior point `G`.
+    This function refers to Theorem 3 of paper [1].
+    More introduction about this function is avaiable.
 
     Args:
-        bf: ndarray, an m-by-n matrix, control allocation matrix for multicopters
-        fmax: Union[ndarray, float], the upper boundary of the enclosed space.
-        fmin: Union[ndarray, float], the lower boundary of the enclosed space.
-        G: ndarray, an n-length vector, representing an point in the space.
 
-    Returns:
-        Minimum of the nearest distance from point `G` to each boundary of the mapped space
+        bf: ndarray, an n-by-m matrix. It refers to the linear map between two spaces. Specify it as the control allocation matrix in the computation of ACAI.
+
+        fmax: np.ndarray | float. The upper bound of each dimension of the space $U$.
+
+        fmin: np.ndarray | float. The lower bound of each dimension of the space $U$.
+
+        G: a 1-D array of length `n`. An point in $\Omega$.
 
     References:
         [1] G.-X. Du, Q. Quan, B. Yang, and K.-Y. Cai, "Controllability Analysis for Multirotor Helicopter Rotor Degradation and Failure," Journal of Guidance, Control, and Dynamics, vol. 38, no. 5, pp. 978-984, 2015. DOI: 10.2514/1.G000731.
@@ -117,9 +129,9 @@ def acai(
     G = G - np.matmul(bf, fmin)
     fmax = fmax - fmin
 
-    # Centre of the original space U_f
+    # centre of the original space U
     fc = fmax / 2
-    # New Space \ Omega's Centre
+    # new space \Omega's Centre
     Fc = np.matmul(bf, fc)
 
     # save the minimum value to each group boundary
@@ -135,14 +147,14 @@ def acai(
         B_2j = np.delete(bf, choose, axis=1)
         fmax_2 = np.delete(fmax / 2, choose, axis=0)
 
-        # Normal vector
+        # normal vector
         xi = B_1j.T.nullspace()[0]
         xi = sp.matrix2numpy(xi / xi.norm())[:, [0]]
         e = np.matmul(xi.T, B_2j)
-        # Calculate the minimum value
+        # calculate the minimum value
         dmin[j] = np.matmul(abs(e), fmax_2) - abs(np.matmul(xi.T, Fc - G))
 
-    # Find the value with the smallest absolute value
+    # find the value with the smallest absolute value
     if min(dmin) >= 0:
         doc = min(dmin)
     else:
@@ -156,22 +168,25 @@ def acai(
 
 def doc_gramian(A: np.ndarray, B: np.ndarray) -> tuple[float, float, float]:
     '''
-    Calculating Gramian-matrix-based degree of controllability (DoC)
+    Computes the Gramian-matrix-based degree of controllability (DOC).
 
-    The function refers to equation (2.9) in the paper [1], for calculating the Gramian-matrix-based DoC of a linear time-invariant (LTI) system.
-    The method incorporates three controllability degrees, depending on the energy optimisation objective.
+    The function refers to equations (2.9) in [1] and Section 2.2 in [2] to compute the Gramian-matrix-based DOC of a linear time-invariant (LTI) system.
+    Three candidates for physically meaningful measures are included.
 
     Args:
-        A: np.ndarray, state matrix
-        B: np.ndarray, input matrix
+        A: np.ndarray. System transition matrix of the state-space model of an LTI system, specified as an n-by-n square matrix.
+        B: np.ndarray, Input coefficient matrix of the state-space model of an LIT system, specified as an n-by-p matrix.
 
     Returns:
-        A triple
+        A tuple `(rho1, rho2, rho3)`, where rho1 is the maximum eigenvalue of $W^{-1}$, rho2 is the trace of it, and rho3 is the determinant of it.
+        More information about the matrix $W$ if available in its corresponding document.
 
     [1] G.-X. Du, Q. Quan, "Degree of Controllability and its Application in Aircraft Flight Control," Journal of Systems Science and Mathematical Sciences, vol. 34, no. 12, pp. 1578-1594, 2014.
+    [2] P.C. Müller, H.I. Weber, "Analysis and optimization of certain qualities of controllability and observability for linear dynamical systems," vol. 8, no. 3, pp. 237-246, 1972. DOI: 10.1016/0005-1098(72)90044-1.
 
     '''
-    # Dimensionality of the state matrix
+
+    # Shape of the state matrix
     # The matrix `A` should be square
     ma, na = A.shape
     # input matrix`B`
@@ -202,45 +217,53 @@ def doc_recovery_region(
     A: np.ndarray, B: np.ndarray, U: tuple, T: float, N: int
 ) -> float:
     '''
-    A definition of controllability based on the recovery domain
+    Computes the degree of controllability based on the recovery region.
 
-    A conservative estimate of the controllability based on the recovery domain is calculated by discretizing the state space according to the algorithm in the literature [1][2].
-    The recovery domain is defined as the set of states that can be controlled to the origin in a specified time and with a tolerable amount of control.
-    At different recovery times, the value of the controllability varies.
-    In this method, in general, the smaller the discretization interval, the higher the accuracy, but the higher the computational complexity.
+    A conservative estimate of the DOC based on the recovery region is computed by discretizing the state-space model according to the algorithm in [1][2].
+    The recovery region is defined as the set of states that can be controlled to the origin in a specified time and control input.
+    The value of the DOC varies based on the recovery time.
+    In this method, in general, the smaller the discretization interval is, the higher the accuracy is, but the higher the computational complexity.
 
     Args:
-        A: np.ndarray, state transfer matrix of a LTI system
-        B: np.ndarray, input matrix of a LTI system
-        U: tuple, maximum and minimum value of each input
-        T: float, time to predict
-        N: int, steps，T/N is the length of discretization
+        A: np.ndarray. System transition matrix of the state-space model of an LTI system.
+        B: np.ndarray. System input matrix of the state-space model of an LTI system.
+        U: tuple. The maximum and minimum value of control inputs.
+        T: float. The recovery time.
+        N: int. The prediction step, and T/N is the length of each interval
 
-    Returns:
-        Conservative estimates of controllability based on recovery domains
+    References:
 
-    [1] 杨斌先, 杜光勋, 全权, 蔡开元. 输入受限下的可控度分析及其在六旋翼飞行器设计中的应用[C]//第三十二届中国控制会议. 中国陕西西安, 2013.
-    [2] Klein G, Jr R E L, Longman R W. Computation of a Degree of Controllability Via System Discretization[J]. Journal of Guidance, Control, and Dynamic, 1982, 5(6): 583-589. DOI: 10.2514/3.19793
+        [1] B Yang, G.-X. Du, Q. Quan, K.-Y. Cai, "The Degree of Controllability with Limited Input and an Application for Hexacopter Design," in Proceedings of the 32nd Chinese Control Conference. Xi'an, Shaanxi, China, 2013.
+        [2] G. Klein, R. E. L. Jr., W. W. Longman, "Computation of a Degree of Controllability Via System Discretization," Journal of Guidance, Control, and Dynamic, vol 5, no. 6, pp. 583-589, 1982. DOI: 10.2514/3.19793
     '''
-    # dimension of input matrix
+    # shape of the input matrix
     n, m = B.shape
     # length of the discretization interval
     s_dT = T / N
     # Matrix calculation
-    # Equation (8) in [1]
+    # equation (8) in [1]
     G = sp.Matrix(A * s_dT).exp()
-    # Equation (9) in [1]
+    # equation (9) in [1]
     t = sp.symbols('t')
     h = sp.Matrix(A * t).exp()
     H = sp.integrate(h, (t, 0, s_dT)) * B
-    # Equation (13) in [1]
+    # equation (13) in [1]
     F = np.zeros((n, N * m))
 
-    for i in range(N):
-        F[:, (N - i - 1) * m : (N - i) * m] = G**i * H
-    # Equation (15) in [1]
+    # save the power of G
+    power_G = H
+    # when i = 0
+    F[:, N * m - m : N * m] = H
+    # otherwise
+    for i in range(1, N):
+        # left multiply
+        power_G = np.matmul(G, power_G)
+        F[:, (N - i - 1) * m : (N - i) * m] = power_G
+    # omit small items
+    F[abs(F) < 1e-6] = 0
+    # equation (15) in [1]
     K = -G.inv() ** N * F
-    # Calculate the distance from the origin of the original space to the boundary of the new space after the linear transformation
+    # calculate the distance from the origin of the original space to the boundary of the new space after the linear map
     doc = acai(sp.matrix2numpy(K), U[1], U[0], np.zeros((n, 1)))
 
     return doc
@@ -250,20 +273,17 @@ def doc_disturbance_rejection_kang(
     A: np.ndarray, B: np.ndarray, D: np.ndarray, Sw: np.ndarray
 ) -> float:
     '''
-    Calculation of the degree of controllability for disturbance rejection
+    Computes the new measure representing degree of controllability for disturbance rejection.
 
-    This method is used to calculate the controllability of an LTI system, for disturbance rejection.
-    A metric for expressing the controllability of a system against interference is presented in [1].
-    Specifically, a method is given for calculating this controllability for a general system state space representation.
-    The two important matrices required for the calculation process are obtained by solving two first-order differential equations.
-    For LTI systems, it is proven that the differential equation is equivalent to the lyapunov equation.
-    Details of the proof and other details can be found in the original literature.
+    This function is used to compute the controllability for disturbance rejection of an LTI system.
+    A new measure to represent the capabilities of disturbance rejection is proposed in [1].
+    More information about the matrix $W$ if available in its corresponding document.
 
     Args:
-        A: np.ndarray, state matrix of a linear system state space
-        B: np.ndarray, input matrix for linear system state space
-        D: np.ndarray, perturbation vectors for the equation of state of a linear system
-        Sw: np.ndarray, covariance matrix of perturbations
+        A: np.ndarray. System transition matrix of the state-space model of an LTI system, specified as an n-by-n square matrix.
+        B: np.ndarray. Input coefficient matrix of the state-space model of an LIT system, specified as an n-by-r matrix.
+        D: np.ndarray. Disturbance matrix, specified as an n-by-l matrix.
+        Sw: np.ndarray. Covariance matrix of disturbance vectors, specified as an l-by-l square matrix.
 
     Returns:
         Degree of controllability for disturbance rejection
@@ -280,7 +300,7 @@ def doc_disturbance_rejection_kang(
     Sigma = scipy.linalg.solve_continuous_lyapunov(A, -np.matmul(np.matmul(D, Sw), D.T))
     # equation (18)
     # trace(\Sigma/W)
-    doc = np.trace(np.matmul(Sigma, np.linalg.inv(W)))
+    doc = np.trace(np.matmul(np.linalg.inv(W), Sigma))
     return doc
 
 

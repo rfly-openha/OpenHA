@@ -3,61 +3,53 @@
 # All Rights Reserved.
 
 import math
-from typing import Union
 
 import numpy as np
 
 
-def raw_moment(x: np.ndarray, k: int) -> Union[float, np.ndarray]:
+def raw_moment(x: np.ndarray, k: int) -> float | np.ndarray:
     '''
-    Compute the raw moment.
+    Calculates the raw moment.
 
-    Return the raw moment of all the samples.
+    Calculates k-th the raw moment of all the observations.
 
     Args:
-        x: np.ndarray, whose shape is `(n, m)`, refer to `n` samples and the length of each is `m`.
-        k: int, number of the order.
-
-    Returns:
-        Raw moment, a scalar if `x.shape == (n,)`, else an ndarray object whose shape is `(m,)`.
+        x: np.ndarray. A N-D array of obervations whose shape is `(n, m)`, namely `n` obervations with `m` features.
+        k: int. Order of raw moment.
 
     '''
 
     # initialize a variable
     y = 0
-    # sum of the powers of each sample
+    # sum of the powers of each observations
     for i in x:
         y = y + i**k
-    # divide by the number of samples
+    # divide by the number of observations
     y = y / len(x)
     # return the final result
-
     return y
 
 
-def central_moment(x: np.ndarray, k: int) -> Union[float, np.ndarray]:
+def central_moment(x: np.ndarray, k: int) -> float | np.ndarray:
     '''
-    Compute the central moment.
+    Calculates the central moment.
 
-    Return the central moment of all the samples.
+    Calculates the central moment of all the observations.
 
     Args:
-        x: np.ndarray, whose shape is (n, m), refer to `n` samples and the length of each is `m`.
-        k: int, number of the order.
-
-    Returns:
-        Central moment, a scalar if `x.shape==(n,)`, else an ndarray object whose shape is (m,).
-
+        x: np.ndarray. A N-D array of obervations whose shape is `(n, m)`, namely `n` obervations with `m` features.
+        k: int. Order of central moment.
     '''
 
     # initialize a variable
     y = 0
-    # mean of all the samples
+    # mean of all the obervations
+    # along the axis=0
     x_bar = x.mean(axis=0)
     # sum of powers of the bias
     for i in x:
         y = y + (i - x_bar) ** k
-    # divide by the number of samples
+    # divide by the number of obervations
     y = y / len(x)
 
     return y
@@ -65,15 +57,12 @@ def central_moment(x: np.ndarray, k: int) -> Union[float, np.ndarray]:
 
 def average_rectified_value(x: np.ndarray) -> float:
     '''
-    Compute the average rectified value.
+    Calculates the average rectified value.
 
     In electrical engineering, the average rectified value of a quantity is the average of its absolute value.
 
     Args:
-        x: np.ndarray, `n` samples of a quantity.
-
-    Returns:
-        The average rectified value.
+        x: np.ndarray. A 1-D array of observations.
 
     '''
     return abs(x).mean(axis=0)
@@ -84,49 +73,51 @@ def skewness(x: np.ndarray) -> float:
     Compute the skewness of time series.
 
     Args:
-        x: np.ndarray, n samples of time series.
+        x: np.ndarray. A N-D array of obervations whose shape is `(n, m)`, namely `n` obervations with `m` features.
 
-    Returns:
-        Skewness
+    References:
+        [1] "Measures of Skewness and Kurtosis," Online, https://www.itl.nist.gov/div898/handbook/eda/section3/eda35b.htm.
+
     '''
     # 3rd central moment
     mu_3 = central_moment(x, 3)
-    # variance
-    sigma_square = variance(x)
+    # std
+    # Note that in computing the kurtosis, the standard deviation is computed using `n` in the denominator rather than `n-1`.
+    sigma_square = x.var(axis=0)
     # skewness
-    skew = mu_3 / math.sqrt(sigma_square) ** 3
+    skew = mu_3 / (math.sqrt(sigma_square) ** 3)
+    return skew
 
 
-def kurtosis(x) -> float:
+def kurtosis(x: np.ndarray) -> float:
     '''
-    Compute the kurtosis of time series.
+    Compute the kurtosis of all the observations.
 
     Args:
-        x: np.ndarray, `n` samples of times series.
+        x: np.ndarray. A N-D array of obervations whose shape is `(n, m)`, namely `n` obervations with `m` features.
 
-    Returns:
-        Kurtosis
+    References:
+        [1] "Measures of Skewness and Kurtosis," Online, https://www.itl.nist.gov/div898/handbook/eda/section3/eda35b.htm.
+
     '''
     # 4th central moment
     mu_4 = central_moment(x, 4)
-    # variance
-    sigma_square = variance(x)
+    # std
+    # Note that in computing the kurtosis, the standard deviation is computed using `n` in the denominator rather than `n-1`.
+    sigma_square = x.var(axis=0)
     # kurtosis
-    kurt = mu_4 / sigma_square**2
+    kurt = mu_4 / (sigma_square**2)
     return kurt
 
 
-def variance(x: np.ndarray) -> Union[float, np.ndarray]:
+def variance(x: np.ndarray) -> float | np.ndarray:
     '''
-    Compute the variance.
+    Calculates the variance.
 
-    Returns the variance of the array elements, a measure of the spread of a distribution.
+    Calculates the variance of all the observations.
 
     Args:
-        x: np.ndarray, whose shape is (n, m), refer to `n` samples and the length of each is `m`.
-
-    Returns:
-        Variance, a scalar if `x.shape==(n,)`, else an ndarray object whose shape is (m,).
+        x: np.ndarray. A N-D array of obervations whose shape is `(n, m)`, namely `n` obervations with `m` features.
 
     '''
     # The `ndarray` object has the method to compute variance.

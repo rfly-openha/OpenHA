@@ -9,19 +9,19 @@ def local_outlier_factor(points: np.ndarray, k: int) -> list:
     '''
     The local outlier factor algorithm
 
-    Detect outliers by the local outlier factor.
+    Compute the local outlier factors of all the points outliers by the local outlier factor.
 
     Args:
-        points: np.ndarray, samples points of m-by-n, representing `m` samples.
-        k: int, number of nearest neighbours, one of the parameters of the algorithm, which should be selected appropriately according to the number of sample points.
+        points: np.ndarray. An array of vectors of length `n`, namely `n` points.
+        k: int. Number of neighbors for k-distance and k-neighbors.
 
     Returns:
-        lof, a list of local outlier factors of each sample points.
+        The local outliers factors of all the points, spcified as an array of positive numeric scalar of length `n`.
     '''
 
-    # Number of sample points
+    # the number of points
     n = len(points)
-    # Calculation of the distance
+    # distances between all the points
     d = np.zeros((n, n))
 
     for i in range(n):
@@ -29,29 +29,33 @@ def local_outlier_factor(points: np.ndarray, k: int) -> list:
             d[i][j] = np.linalg.norm(points[i] - points[j])
             d[j][i] = d[i][j]
 
-    # Save the subscripts of the points in the k-field of each point
+    # k-neighbors
+    # the indexes of points in the k-neighbors of each point should be saved
     N_p = []
-    # k-th distance
+    # k-distance of each points
     k_distance = [0] * n
 
     for i in range(n):
-        # Sort to find the distance to the kth nearest point
+        # sort to find the k-distance
+        # (distance, corresponding index)
         neighbor_i = [(d[i][j], j) for j in range(n)]
-        # Sort by distance
+        # sort by distance
         neighbor_i = sorted(neighbor_i, key=lambda x: x[0])
         k_distance[i] = neighbor_i[k][0]
-        # Find all points within this distance
+        # find all points within this distance
         for j in range(n - 1, -1, -1):
             if neighbor_i[j][0] <= k_distance[i]:
                 break
         N_p.append([x[1] for x in neighbor_i[1 : j + 1]])
 
-    # Local reachable distance
+    # local reachablity density
     lrd = np.zeros((n,))
 
     for i in range(n):
         for j in N_p[i]:
+            # sum of the rechability distances between i-th point and its neighbors
             lrd[i] += max(k_distance[j], d[i][j])
+        # reciprocal of the mean of rechability distances
         lrd[i] = len(N_p[i]) / lrd[i]
 
     # Local outlier

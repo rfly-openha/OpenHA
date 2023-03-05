@@ -11,22 +11,23 @@ def analytical_hierarchy_process(
     '''
     Analytical Hierarchy Process (AHP)
 
-    Compute weights of each element according to AHP and the comparison matrix `A`
-    The argument `method` is used to decide the way to finally get weights vector.
+    The Analytic Hierarchy Process is a mathematical model for decision making problems developed by Thomas L. Saaty.
+    Compute weight of each element according to pairwise comparison matrix `A`.
+    And `method` specifies the way to compute the weights vector.
 
     Args:
-        A: np.ndarray, comparison matrix which is a square matrix.
-        method: str, optional, the way to finally compute weights vector.
-            `eigenvector` (default), `geometric_mean`, and `arithmetic_mean`.
-            `eigenvector`: the eigenvector corresponding to the max eigenvalue.
-            `geometric_mean`: the geometric mean of each row of matrix `A`.
-            `arithmetic_mean`: the arithmetic mean of each row of matrix `A`.
+        A: np.ndarray. The n-by-n pairwise comparison matrix.
+        method: str, optional. It specifies the way how to compute the weights vector.
+            It's specified as `eigenvector` (default), `geometric_mean`, or `arithmetic_mean`.
+            `eigenvector`: The eigenvector of `A` corresponding to the maximum eigenvalue.
+            `geometric_mean`: The geometric mean of each row of matrix `A`.
+            `arithmetic_mean`: The arithmetic mean of each row of matrix `A`.
 
     Returns:
-        tuple: a list of weights and coherence ratio
+        A tuple `(W, CI, CR)`, where `W` is the weight vector, `CI` is the consistency index, and `CR` is the consistency ratio.
 
     '''
-    # size of the matrix `A`
+    # shape of the matrix `A`
     m, n = A.shape
 
     # eigenvalues and eigenvectors, respectively.
@@ -41,9 +42,9 @@ def analytical_hierarchy_process(
 
     # Saaty random coherence
     RI = [0, 0, 0.58, 0.90, 1.12, 1.24, 1.32, 1.41, 1.45, 1.49, 1.51]
-    # coherence index
+    # consistency index
     CI = (lambda_max - n) / (n - 1)
-    # coherence ratio
+    # consistency ratio
     CR = CI / RI[n - 1]
 
     # default take the eigenvector as the weights vector
@@ -52,7 +53,7 @@ def analytical_hierarchy_process(
         # mean of each row
         W = A.prod(axis=1) ** (1 / n)
     elif method == 'arithmetic_mean':
-        # normlization by column and mean of each row
+        # normlize it by column and mean of each row
         W = (A / A.sum(axis=0)).mean(axis=1)
     # normlization
     W /= W.sum()
@@ -62,18 +63,16 @@ def analytical_hierarchy_process(
 
 def sum_by_weight(weights: list[float], elements: list[float]) -> float:
     '''
-    Compute weighted sum.
+    Calculates the weighted sum.
 
     Args:
-        weights: list[float], a list of weights of each element.
-        elements: list[float], the list of all the elements, whose length is equal to `weights`.
+        weights: list[float]. The weight vector.
+        elements: list[float]. An array of values of the elements.
 
-    Returns:
-        The weighted sum.
     '''
     # the weighted sum, initialize it with 0
     s = 0
-    # add the product of each element and its weight
+    # add the product of each value and its weight
     for i, j in zip(weights, elements):
         s += i * j
 
