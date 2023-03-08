@@ -4,6 +4,7 @@
 
 from random import shuffle
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -91,6 +92,23 @@ def load_ANN(net: nn.Module, path: str, **kwargs):
         net.load_state_dict(torch.load(path, map_location=map_location))
     else:
         print('waiting for support!')
+
+
+def print_matrix(m: np.ndarray, ndigits: int = 4):
+    '''
+    Print a 2-D matrix or array of numpy.
+    To enhance the readability, all the numbers will be rounded to a given precision in decimal digits.
+    '''
+    # only 2-D matrix is expected
+    r, c = m.shape
+    # clone the matrix in case some error
+    clone = np.zeros((r, c))
+    # round each number
+    for i in range(r):
+        for j in range(c):
+            clone[i, j] = round(m[i, j], ndigits)
+    # print it to console
+    print(clone)
 
 
 if __name__ == '__main__':
