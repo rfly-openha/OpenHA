@@ -3,4 +3,4 @@
 # All Rights Reserved.
 
 
-from OpenHA.manipulation.feature.statistical_characteristics import *
+from OpenHA.processing.feature.statistical_characteristics import *

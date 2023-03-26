@@ -3,5 +3,5 @@
 # All Rights Reserved.
 
 
-from OpenHA.manipulation.preprocess.outlier_detection import *
-from OpenHA.manipulation.preprocess.resample import *
+from OpenHA.processing.preprocess.outlier_detection import *
+from OpenHA.processing.preprocess.resample import *
