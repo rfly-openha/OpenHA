@@ -3,4 +3,5 @@
 # All Rights Reserved.
 
 
+from OpenHA.assessment.system.fault_tree import *
 from OpenHA.assessment.system.weighted_sum import *
