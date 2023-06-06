@@ -33,9 +33,9 @@ def control_allocation(
 
         **eta: list | float. The efficient coefficient of each propeller. Default is `1`.
 
-        **giveup_yaw: bool. Whether to give up the control of height or not. `True` or `False` (default).
+        **giveup_yaw: bool. Whether to give up the control of yaw angle or not. `True` or `False` (default).
 
-        **giveup_height: bool. Whether to give up the control of yaw or not. `True` or `False` (default).
+        **giveup_height: bool. Whether to give up the control of height or not. `True` or `False` (default).
 
 
     '''
